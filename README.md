@@ -76,3 +76,17 @@ docker compose down
 - 首次执行会自动创建 `schema_migrations(version, applied_at)`
 - 已执行版本按文件名去重，不会重复执行
 - 失败会非 0 退出并阻断后续依赖服务启动
+
+## GitHub 默认显示 `main` 分支
+
+如果你本地开发分支是 `work`，希望 GitHub 仓库默认展示 `main`：
+
+```bash
+# 1) 基于当前代码创建/更新 main
+git checkout -B main
+
+# 2) 推送到远端 main
+git push -u origin main
+```
+
+然后在 GitHub 仓库的 **Settings → Branches → Default branch** 中选择 `main`。
