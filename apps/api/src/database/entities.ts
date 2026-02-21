@@ -237,6 +237,99 @@ export class BatchItemEntity {
   status!: string;
 }
 
+@Entity('provider_configs')
+@Unique(['providerKey'])
+export class ProviderConfigEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Column({ name: 'provider_key' })
+  providerKey!: 'openai_chat' | 'runninghub' | 'storage';
+
+  @Column({ name: 'config_json', type: 'jsonb' })
+  configJson!: Record<string, unknown>;
+
+  @Column({ name: 'is_active', default: true })
+  isActive!: boolean;
+
+  @Column({ name: 'updated_by_admin_id' })
+  updatedByAdminId!: string;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt!: Date;
+}
+
+@Entity('provider_config_versions')
+@Unique(['providerKey', 'version'])
+export class ProviderConfigVersionEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Column({ name: 'provider_key' })
+  providerKey!: 'openai_chat' | 'runninghub' | 'storage';
+
+  @Column({ type: 'int' })
+  version!: number;
+
+  @Column({ name: 'config_json', type: 'jsonb' })
+  configJson!: Record<string, unknown>;
+
+  @Column({ name: 'change_note' })
+  changeNote!: string;
+
+  @Column({ name: 'created_by_admin_id' })
+  createdByAdminId!: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+}
+
+@Entity('secrets_vault')
+@Unique(['secretKey'])
+export class SecretVaultEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Column({ name: 'secret_key' })
+  secretKey!: string;
+
+  @Column({ name: 'encrypted_value', type: 'text' })
+  encryptedValue!: string;
+
+  @Column({ name: 'is_active', default: true })
+  isActive!: boolean;
+
+  @Column({ name: 'rotated_at', type: 'timestamptz', default: () => 'now()' })
+  rotatedAt!: Date;
+
+  @Column({ name: 'updated_by_admin_id' })
+  updatedByAdminId!: string;
+}
+
+@Entity('admin_logs')
+export class AdminLogEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Column({ name: 'admin_id' })
+  adminId!: string;
+
+  @Column()
+  action!: string;
+
+  @Column({ name: 'target_type' })
+  targetType!: string;
+
+  @Column({ name: 'target_id', nullable: true })
+  targetId!: string | null;
+
+  @Column({ type: 'jsonb', nullable: true })
+  metadata!: Record<string, unknown> | null;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+}
+
 export const ENTITIES = [
   UserEntity,
   SubscriptionEntity,
@@ -249,4 +342,8 @@ export const ENTITIES = [
   UsageLedgerEntity,
   BatchJobEntity,
   BatchItemEntity,
+  ProviderConfigEntity,
+  ProviderConfigVersionEntity,
+  SecretVaultEntity,
+  AdminLogEntity,
 ];

@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule as NestConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminModule } from './admin/admin.module';
@@ -7,6 +7,7 @@ import { AppController } from './app.controller';
 import { AssetsModule } from './assets/assets.module';
 import { AuthModule } from './auth/auth.module';
 import { BatchModule } from './batch/batch.module';
+import { ConfigModule } from './config/config.module';
 import { ENTITIES } from './database/entities';
 import { MembershipModule } from './membership/membership.module';
 import { ProjectsModule } from './projects/projects.module';
@@ -16,7 +17,7 @@ import { WorkflowsModule } from './workflows/workflows.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    NestConfigModule.forRoot({ isGlobal: true }),
     JwtModule.register({ global: true, secret: process.env.JWT_SECRET || 'dev-secret' }),
     TypeOrmModule.forRoot({
       type: 'postgres',
@@ -28,6 +29,7 @@ import { WorkflowsModule } from './workflows/workflows.module';
       entities: ENTITIES,
       synchronize: false,
     }),
+    ConfigModule,
     AuthModule,
     MembershipModule,
     ProjectsModule,
