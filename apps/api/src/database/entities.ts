@@ -16,13 +16,13 @@ export class UserEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   email!: string;
 
-  @Column({ name: 'password_hash' })
+  @Column({ name: 'password_hash', type: 'varchar' })
   passwordHash!: string;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 
   @OneToMany(() => SubscriptionEntity, (sub) => sub.user)
@@ -34,14 +34,14 @@ export class SubscriptionEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'user_id' })
+  @Column({ name: 'user_id', type: 'uuid' })
   userId!: string;
 
   @ManyToOne(() => UserEntity, (user) => user.subscriptions)
   @JoinColumn({ name: 'user_id' })
   user!: UserEntity;
 
-  @Column()
+  @Column({ type: 'varchar' })
   plan!: string;
 
   @Column({ name: 'start_at', type: 'timestamptz' })
@@ -56,16 +56,16 @@ export class ProjectEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'user_id' })
+  @Column({ name: 'user_id', type: 'uuid' })
   userId!: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   type!: 'store' | 'campaign';
 
-  @Column()
+  @Column({ type: 'varchar' })
   name!: string;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }
 
@@ -74,7 +74,7 @@ export class ToolDefinitionEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'tool_key', unique: true })
+  @Column({ name: 'tool_key', type: 'varchar', unique: true })
   toolKey!: string;
 
   @Column({ name: 'prompt_template', type: 'text' })
@@ -86,7 +86,7 @@ export class ToolDefinitionEntity {
   @Column({ name: 'output_schema', type: 'jsonb' })
   outputSchema!: Record<string, unknown>;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt!: Date;
 }
 
@@ -95,10 +95,10 @@ export class ToolRunEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'user_id' })
+  @Column({ name: 'user_id', type: 'uuid' })
   userId!: string;
 
-  @Column({ name: 'project_id', nullable: true })
+  @Column({ name: 'project_id', type: 'varchar', nullable: true })
   projectId!: string | null;
 
   @Column({ type: 'jsonb' })
@@ -113,7 +113,7 @@ export class ToolRunEntity {
   @Column({ type: 'numeric', default: 0 })
   cost!: number;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }
 
@@ -122,10 +122,10 @@ export class WorkflowWrapperEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'workflow_key', unique: true })
+  @Column({ name: 'workflow_key', type: 'varchar', unique: true })
   workflowKey!: string;
 
-  @Column({ name: 'runninghub_workflow_id' })
+  @Column({ name: 'runninghub_workflow_id', type: 'varchar' })
   runninghubWorkflowId!: string;
 
   @Column({ name: 'form_schema', type: 'jsonb' })
@@ -149,22 +149,22 @@ export class GenTaskEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'workflow_key' })
+  @Column({ name: 'workflow_key', type: 'varchar' })
   workflowKey!: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   status!: string;
 
-  @Column({ name: 'runninghub_task_id', nullable: true })
+  @Column({ name: 'runninghub_task_id', type: 'varchar', nullable: true })
   runninghubTaskId!: string | null;
 
   @Column({ type: 'int', default: 0 })
   progress!: number;
 
-  @Column({ name: 'result_url', nullable: true })
+  @Column({ name: 'result_url', type: 'varchar', nullable: true })
   resultUrl!: string | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }
 
@@ -173,16 +173,16 @@ export class AssetEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   type!: 'text' | 'image' | 'video';
 
-  @Column({ name: 'content_url' })
+  @Column({ name: 'content_url', type: 'varchar' })
   contentUrl!: string;
 
-  @Column({ name: 'project_id', nullable: true })
+  @Column({ name: 'project_id', type: 'varchar', nullable: true })
   projectId!: string | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }
 
@@ -191,19 +191,19 @@ export class UsageLedgerEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'user_id' })
+  @Column({ name: 'user_id', type: 'uuid' })
   userId!: string;
 
-  @Column({ name: 'resource_type' })
+  @Column({ name: 'resource_type', type: 'varchar' })
   resourceType!: string;
 
   @Column({ type: 'numeric' })
   amount!: number;
 
-  @Column()
+  @Column({ type: 'varchar' })
   reason!: string;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }
 
@@ -212,13 +212,13 @@ export class BatchJobEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'user_id' })
+  @Column({ name: 'user_id', type: 'uuid' })
   userId!: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   status!: string;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }
 
@@ -227,13 +227,13 @@ export class BatchItemEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'batch_job_id' })
+  @Column({ name: 'batch_job_id', type: 'uuid' })
   batchJobId!: string;
 
   @Column({ type: 'jsonb' })
   payload!: Record<string, unknown>;
 
-  @Column()
+  @Column({ type: 'varchar' })
   status!: string;
 }
 
@@ -243,19 +243,19 @@ export class ProviderConfigEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'provider_key' })
+  @Column({ name: 'provider_key', type: 'varchar' })
   providerKey!: 'openai_chat' | 'runninghub' | 'storage';
 
   @Column({ name: 'config_json', type: 'jsonb' })
   configJson!: Record<string, unknown>;
 
-  @Column({ name: 'is_active', default: true })
+  @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
 
-  @Column({ name: 'updated_by_admin_id' })
+  @Column({ name: 'updated_by_admin_id', type: 'varchar' })
   updatedByAdminId!: string;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt!: Date;
 }
 
@@ -265,7 +265,7 @@ export class ProviderConfigVersionEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'provider_key' })
+  @Column({ name: 'provider_key', type: 'varchar' })
   providerKey!: 'openai_chat' | 'runninghub' | 'storage';
 
   @Column({ type: 'int' })
@@ -274,13 +274,13 @@ export class ProviderConfigVersionEntity {
   @Column({ name: 'config_json', type: 'jsonb' })
   configJson!: Record<string, unknown>;
 
-  @Column({ name: 'change_note' })
+  @Column({ name: 'change_note', type: 'text' })
   changeNote!: string;
 
-  @Column({ name: 'created_by_admin_id' })
+  @Column({ name: 'created_by_admin_id', type: 'varchar' })
   createdByAdminId!: string;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }
 
@@ -290,19 +290,19 @@ export class SecretVaultEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'secret_key' })
+  @Column({ name: 'secret_key', type: 'varchar' })
   secretKey!: string;
 
   @Column({ name: 'encrypted_value', type: 'text' })
   encryptedValue!: string;
 
-  @Column({ name: 'is_active', default: true })
+  @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
 
   @Column({ name: 'rotated_at', type: 'timestamptz', default: () => 'now()' })
   rotatedAt!: Date;
 
-  @Column({ name: 'updated_by_admin_id' })
+  @Column({ name: 'updated_by_admin_id', type: 'varchar' })
   updatedByAdminId!: string;
 }
 
@@ -311,22 +311,22 @@ export class AdminLogEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'admin_id' })
+  @Column({ name: 'admin_id', type: 'varchar' })
   adminId!: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   action!: string;
 
-  @Column({ name: 'target_type' })
+  @Column({ name: 'target_type', type: 'varchar' })
   targetType!: string;
 
-  @Column({ name: 'target_id', nullable: true })
+  @Column({ name: 'target_id', type: 'varchar', nullable: true })
   targetId!: string | null;
 
   @Column({ type: 'jsonb', nullable: true })
   metadata!: Record<string, unknown> | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }
 
