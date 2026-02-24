@@ -7,6 +7,7 @@ import { AppController } from './app.controller';
 import { AssetsModule } from './assets/assets.module';
 import { AuthModule } from './auth/auth.module';
 import { BatchModule } from './batch/batch.module';
+import { BillingModule } from './billing/billing.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { ConfigModule } from './config/config.module';
 import { ENTITIES } from './database/entities';
@@ -45,6 +46,7 @@ import { WorkflowsModule } from './workflows/workflows.module';
     TasksModule,
     AssetsModule,
     BatchModule,
+    BillingModule,
     AdminModule,
     MenuModule,
     CatalogModule,

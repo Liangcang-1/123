@@ -1,23 +1,15 @@
-# 电商商家 AI 创作与运营工具平台（SaaS MVP）
+# 电商商家 AI 创作与运营工具平台（SaaS V1）
 
-## 架构
-- Monorepo: `apps/api` (NestJS + TypeORM + PostgreSQL) / `apps/web` (Next.js 14)
-- 部署: Docker Compose (`postgres` / `redis` / `migrate` / `api` / `web` / `nginx`)
+## 项目结构
+- `apps/api`: NestJS + TypeORM + PostgreSQL
+- `apps/web`: Next.js 14 App Router
+- `docker-compose.yml`: postgres/redis/migrate/api/web/nginx 一体化部署
 
-## 核心能力
-- 多租户（Tenant）+ 角色（OWNER/ADMIN/MEMBER）
-- 平台后台可配置 Provider、同步 Catalog、编排商家端菜单、租户授权
-- 商家端动态菜单 -> 创作提交 -> 任务状态 -> 素材入库闭环
+## 默认账号（空库首次启动自动 seed）
+- 平台管理员：`admin@example.com / password123`
+- 商家账号：`owner@example.com / password123`
 
-## 关键 API
-- Auth: `POST /api/auth/login`, `GET /api/me`
-- Menu/Catalog: `GET /api/menu`, `GET /api/catalog/templates`, `GET /api/catalog/tools`
-- Tasks: `POST /api/tasks/run`, `GET /api/tasks`, `GET /api/tasks/:id`, `POST /api/tasks/:id/retry`, `POST /api/tasks/:id/cancel`
-- Assets: `GET /api/assets`, `GET /api/assets/:id`
-- Settings: `GET/PUT /api/settings`
-- Admin: `GET/POST /api/admin/provider-configs`, `POST /api/admin/catalog/sync`, `GET/POST /api/admin/menu/groups`, `GET/POST /api/admin/menu/items`, `GET/POST /api/admin/tenants/:id/entitlements`, `GET /api/admin/audit-logs`
-
-## Docker 生产部署（增量，不清空）
+## 一键部署（增量，不清库）
 ```bash
 cp .env.example .env
 # 填写 MASTER_KEY / JWT_SECRET
@@ -25,21 +17,26 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-### 一键脚本
+## 验收命令
 ```bash
-bash scripts/deploy.sh
+curl -sS http://127.0.0.1/api/health
+curl -sS http://127.0.0.1/api/menu
+curl -sS http://127.0.0.1/api/billing/summary
 ```
 
-脚本会：
-1. 校验 `.env`（不存在则从 `.env.example` 复制）
-2. 执行 `docker compose up -d --build`
-3. 输出服务状态
+## 功能闭环
+1. 登录商家账号进入 `/dashboard`
+2. 左侧菜单选择模板/工具，进入 `/tools/:menuItemId`
+3. 提交生成任务，结果自动写入任务中心 `/tasks` 与素材库 `/assets`
+4. 未开通工具灰态可见，点击可查看升级引导
 
-## 首次初始化
-- 默认演示账号（seed）
-  - 邮箱：`owner@example.com`
-  - 密码：`password123`
-- 登录后可看到默认菜单、模板、工具、任务与素材入口。
+## 关键 API
+- `GET /api/menu`（含 version、分组、灰态工具信息）
+- `GET /api/tools/:menuItemId/meta`
+- `POST /api/tasks/run`
+- `GET /api/tasks`
+- `GET /api/assets`, `POST /api/assets/folders`, `PATCH /api/assets/:id`, `DELETE /api/assets/:id`
+- `GET /api/billing/summary`, `GET /api/billing/by-tool`
 
 ## 运维排查
 ```bash
@@ -49,21 +46,9 @@ docker compose logs -f web
 docker compose logs -f nginx
 ```
 
-### 端口冲突（宿主机 Nginx 占用 80）
+## 端口冲突
+宿主机占用 80 时：
 ```bash
 sudo systemctl stop nginx
-# 或修改 docker-compose.yml 的 nginx 映射端口，如 "8080:80"
+# 或将 docker-compose nginx 端口改为 8080:80
 ```
-
-## Healthcheck
-- API: `GET /api/health` -> `{"status":"ok"}`
-- Web: `/` 返回 200
-- Nginx: `/` 与 `/api/health` 均可访问
-
-## 验收 Checklist
-- [ ] `docker compose ps` 全部 healthy
-- [ ] 访问 `http://<server-ip>/` 可见登录页/工作台
-- [ ] Admin 修改菜单后商家端左侧菜单即时变化
-- [ ] 商家端能创建任务并在任务中心查看状态
-- [ ] 任务成功后素材库可看到新资产记录
-- [ ] 商家端页面与接口无 Provider 实现品牌暴露

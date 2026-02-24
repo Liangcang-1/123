@@ -3,12 +3,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { hashSync } from 'bcryptjs';
 import { Repository } from 'typeorm';
 import {
+  AssetEntity,
+  AssetFolderEntity,
   CatalogTemplateEntity,
   CatalogToolEntity,
+  GenTaskEntity,
   MenuGroupEntity,
   MenuItemEntity,
   TenantEntitlementEntity,
   TenantEntity,
+  UsageLedgerEntity,
   UserEntity,
 } from '../database/entities';
 
@@ -22,6 +26,10 @@ export class SeedService implements OnModuleInit {
     @InjectRepository(MenuGroupEntity) private readonly menuGroupRepo: Repository<MenuGroupEntity>,
     @InjectRepository(MenuItemEntity) private readonly menuItemRepo: Repository<MenuItemEntity>,
     @InjectRepository(TenantEntitlementEntity) private readonly entitlementRepo: Repository<TenantEntitlementEntity>,
+    @InjectRepository(GenTaskEntity) private readonly taskRepo: Repository<GenTaskEntity>,
+    @InjectRepository(AssetEntity) private readonly assetRepo: Repository<AssetEntity>,
+    @InjectRepository(AssetFolderEntity) private readonly folderRepo: Repository<AssetFolderEntity>,
+    @InjectRepository(UsageLedgerEntity) private readonly usageRepo: Repository<UsageLedgerEntity>,
   ) {}
 
   async onModuleInit() {
@@ -29,43 +37,92 @@ export class SeedService implements OnModuleInit {
     if (count > 0) return;
 
     const tenant = await this.tenantRepo.save(this.tenantRepo.create({ name: '演示商家', plan: 'pro' }));
-    await this.userRepo.save(this.userRepo.create({
-      tenantId: tenant.id,
-      email: 'owner@example.com',
-      passwordHash: hashSync('password123', 10),
-      role: 'OWNER',
-    }));
+    const admin = await this.userRepo.save(this.userRepo.create({ tenantId: tenant.id, email: 'admin@example.com', passwordHash: hashSync('password123', 10), role: 'ADMIN' }));
+    const merchant = await this.userRepo.save(this.userRepo.create({ tenantId: tenant.id, email: 'owner@example.com', passwordHash: hashSync('password123', 10), role: 'OWNER' }));
 
-    const template = await this.templateRepo.save(this.templateRepo.create({
-      providerTemplateId: 'tpl-product-image',
-      key: 'product-image-generator',
-      name: '商品主图生成',
-      category: 'ecom_image',
-      description: '适用于上新商品主图',
-      inputSchema: { fields: [{ name: 'product_name', type: 'text', required: true }] },
-      outputSchema: { type: 'image' },
-    }));
+    const presetBase = {
+      scenes: { values: ['上新', '大促', '直播间'] },
+      examples: { samples: ['简洁高转化', '氛围感强', '平台规范'] },
+      presets: [
+        { name: '高转化', values: { tone: '促销', style: '电商爆款' } },
+        { name: '品牌感', values: { tone: '高级', style: '品牌视觉' } },
+        { name: '活动冲刺', values: { tone: '紧迫', style: '限时活动' } },
+      ],
+    };
 
-    const tool = await this.toolRepo.save(this.toolRepo.create({
-      providerToolId: 'tool-title-copy',
-      key: 'title-copy-tool',
-      name: '标题文案优化',
-      category: 'ecom_copy',
-      description: '为商品生成标题和卖点',
-      inputSchema: { fields: [{ name: 'product_name', type: 'text', required: true }] },
-      outputSchema: { type: 'text' },
-    }));
+    const templates = await this.templateRepo.save([
+      this.templateRepo.create({ providerTemplateId: 'tpl-main-image', key: 'main-image', name: '商品主图生成', category: 'ecom_image', description: '生成上新主图', inputSchema: { fields: [{ name: 'product_name', type: 'text', required: true }] }, outputSchema: { type: 'image' }, costHint: '约 1 点/次', ...presetBase }),
+      this.templateRepo.create({ providerTemplateId: 'tpl-poster', key: 'promo-poster', name: '活动海报生成', category: 'poster', description: '大促海报生成', inputSchema: { fields: [{ name: 'campaign', type: 'text', required: true }] }, outputSchema: { type: 'image' }, costHint: '约 2 点/次', ...presetBase }),
+      this.templateRepo.create({ providerTemplateId: 'tpl-detail', key: 'detail-page', name: '详情页结构与文案', category: 'ecom_copy', description: '详情页分段文案', inputSchema: { fields: [{ name: 'selling_points', type: 'textarea', required: true }] }, outputSchema: { type: 'text' }, costHint: '约 1 点/次', ...presetBase }),
+    ]);
 
-    const group = await this.menuGroupRepo.save(this.menuGroupRepo.create({ scope: 'global', name: 'AI 创作工具', icon: 'Sparkles', sort: 1 }));
+    const tools = await this.toolRepo.save([
+      this.toolRepo.create({ providerToolId: 'tool-title', key: 'title-copy', name: '标题卖点优化', category: 'ecom_copy', description: '生成标题与卖点组合', inputSchema: { fields: [{ name: 'product_name', type: 'text', required: true }] }, outputSchema: { type: 'text' }, costHint: '约 1 点/次', ...presetBase }),
+      this.toolRepo.create({ providerToolId: 'tool-video-script', key: 'video-script', name: '短视频脚本', category: 'video_script', description: '生成短视频分镜脚本', inputSchema: { fields: [{ name: 'product_name', type: 'text', required: true }] }, outputSchema: { type: 'text' }, costHint: '约 2 点/次', ...presetBase }),
+      this.toolRepo.create({ providerToolId: 'tool-live', key: 'live-pitch', name: '直播话术', category: 'live_stream', description: '直播间话术建议', inputSchema: { fields: [{ name: 'product_name', type: 'text', required: true }] }, outputSchema: { type: 'text' }, costHint: '约 1 点/次', ...presetBase }),
+    ]);
+
+    const groups = await this.menuGroupRepo.save([
+      this.menuGroupRepo.create({ scope: 'global', name: '商品上新', icon: 'PackagePlus', sort: 1 }),
+      this.menuGroupRepo.create({ scope: 'global', name: '活动营销', icon: 'Megaphone', sort: 2 }),
+      this.menuGroupRepo.create({ scope: 'global', name: '店铺运营', icon: 'Store', sort: 3 }),
+      this.menuGroupRepo.create({ scope: 'global', name: '素材与任务', icon: 'FolderKanban', sort: 4 }),
+      this.menuGroupRepo.create({ scope: 'global', name: '设置', icon: 'Settings', sort: 5 }),
+    ]);
+
     await this.menuItemRepo.save([
-      this.menuItemRepo.create({ groupId: group.id, itemType: 'template', itemId: template.id, title: '商品主图生成', icon: 'Image', sort: 1, enabled: true }),
-      this.menuItemRepo.create({ groupId: group.id, itemType: 'tool', itemId: tool.id, title: '标题文案优化', icon: 'FileText', sort: 2, enabled: true }),
-      this.menuItemRepo.create({ groupId: group.id, itemType: 'page', pagePath: '/tasks', title: '任务中心', icon: 'ListTodo', sort: 3, enabled: true }),
+      this.menuItemRepo.create({ groupId: groups[0].id, itemType: 'template', itemId: templates[0].id, title: '商品主图生成', icon: 'Image', sort: 1, pinned: true, category: '上新', costHint: '1 点/次' }),
+      this.menuItemRepo.create({ groupId: groups[0].id, itemType: 'tool', itemId: tools[0].id, title: '标题卖点优化', icon: 'Heading', sort: 2, pinned: true, category: '上新', costHint: '1 点/次' }),
+      this.menuItemRepo.create({ groupId: groups[1].id, itemType: 'template', itemId: templates[1].id, title: '活动海报生成', icon: 'ImagePlus', sort: 1, category: '营销', costHint: '2 点/次' }),
+      this.menuItemRepo.create({ groupId: groups[1].id, itemType: 'tool', itemId: tools[1].id, title: '短视频脚本', icon: 'Clapperboard', sort: 2, category: '营销', costHint: '2 点/次' }),
+      this.menuItemRepo.create({ groupId: groups[2].id, itemType: 'template', itemId: templates[2].id, title: '详情页结构与文案', icon: 'FileText', sort: 1, category: '运营', costHint: '1 点/次' }),
+      this.menuItemRepo.create({ groupId: groups[2].id, itemType: 'tool', itemId: tools[2].id, title: '直播话术', icon: 'Mic', sort: 2, category: '运营', costHint: '1 点/次', grayRelease: true, disabledReason: '需升级专业版' }),
+      this.menuItemRepo.create({ groupId: groups[3].id, itemType: 'page', pagePath: '/tasks', title: '任务中心', icon: 'ListTodo', sort: 1 }),
+      this.menuItemRepo.create({ groupId: groups[3].id, itemType: 'page', pagePath: '/assets', title: '素材库', icon: 'Folder', sort: 2 }),
+      this.menuItemRepo.create({ groupId: groups[4].id, itemType: 'page', pagePath: '/billing', title: '账单与用量', icon: 'Wallet', sort: 1 }),
     ]);
 
     await this.entitlementRepo.save([
-      this.entitlementRepo.create({ tenantId: tenant.id, itemType: 'template', itemId: template.id, enabled: true }),
-      this.entitlementRepo.create({ tenantId: tenant.id, itemType: 'tool', itemId: tool.id, enabled: true }),
+      ...templates.map((t) => this.entitlementRepo.create({ tenantId: tenant.id, itemType: 'template', itemId: t.id, enabled: true })),
+      this.entitlementRepo.create({ tenantId: tenant.id, itemType: 'tool', itemId: tools[0].id, enabled: true }),
+      this.entitlementRepo.create({ tenantId: tenant.id, itemType: 'tool', itemId: tools[1].id, enabled: true }),
+      this.entitlementRepo.create({ tenantId: tenant.id, itemType: 'tool', itemId: tools[2].id, enabled: false }),
     ]);
+
+    const folder = await this.folderRepo.save(this.folderRepo.create({ tenantId: tenant.id, name: '默认素材夹', parentId: null }));
+    const task = await this.taskRepo.save(this.taskRepo.create({
+      tenantId: tenant.id,
+      userId: merchant.id,
+      type: 'template',
+      templateId: templates[0].id,
+      workflowKey: 'template',
+      status: 'succeeded',
+      input: { product_name: '示例商品' },
+      output: { result: '示例输出' },
+      progress: 100,
+      resultUrl: 'https://example.com/demo-asset.png',
+      providerTaskId: 'demo_provider_task',
+    }));
+
+    await this.assetRepo.save(this.assetRepo.create({
+      tenantId: tenant.id,
+      taskId: task.id,
+      sourceTaskId: task.id,
+      folderId: folder.id,
+      type: 'image',
+      title: '示例主图素材',
+      tags: ['上新', '主图'],
+      contentUrl: 'https://example.com/demo-asset.png',
+      meta: { demo: true },
+    }));
+
+    await this.usageRepo.save(this.usageRepo.create({
+      tenantId: tenant.id,
+      userId: admin.id,
+      resourceType: 'generation',
+      amount: 5,
+      reason: 'seed_usage',
+      taskId: task.id,
+    }));
   }
 }

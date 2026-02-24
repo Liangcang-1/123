@@ -230,6 +230,14 @@ export class CatalogTemplateEntity {
   version!: number;
   @Column({ type: 'boolean', default: true })
   enabled!: boolean;
+  @Column({ type: 'jsonb', nullable: true })
+  scenes!: Record<string, unknown> | null;
+  @Column({ type: 'jsonb', nullable: true })
+  examples!: Record<string, unknown> | null;
+  @Column({ type: 'jsonb', nullable: true })
+  presets!: Record<string, unknown> | null;
+  @Column({ name: 'cost_hint', type: 'varchar', nullable: true })
+  costHint!: string | null;
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }
@@ -258,6 +266,14 @@ export class CatalogToolEntity {
   version!: number;
   @Column({ type: 'boolean', default: true })
   enabled!: boolean;
+  @Column({ type: 'jsonb', nullable: true })
+  scenes!: Record<string, unknown> | null;
+  @Column({ type: 'jsonb', nullable: true })
+  examples!: Record<string, unknown> | null;
+  @Column({ type: 'jsonb', nullable: true })
+  presets!: Record<string, unknown> | null;
+  @Column({ name: 'cost_hint', type: 'varchar', nullable: true })
+  costHint!: string | null;
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }
@@ -318,6 +334,16 @@ export class MenuItemEntity {
   sort!: number;
   @Column({ type: 'boolean', default: true })
   enabled!: boolean;
+  @Column({ type: 'boolean', default: false })
+  pinned!: boolean;
+  @Column({ type: 'varchar', nullable: true })
+  category!: string | null;
+  @Column({ name: 'cost_hint', type: 'varchar', nullable: true })
+  costHint!: string | null;
+  @Column({ name: 'disabled_reason', type: 'varchar', nullable: true })
+  disabledReason!: string | null;
+  @Column({ name: 'gray_release', type: 'boolean', default: false })
+  grayRelease!: boolean;
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }
@@ -362,6 +388,21 @@ export class GenTaskEntity {
   updatedAt!: Date;
 }
 
+
+@Entity('asset_folders')
+export class AssetFolderEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+  @Column({ name: 'tenant_id', type: 'uuid' })
+  tenantId!: string;
+  @Column({ type: 'varchar' })
+  name!: string;
+  @Column({ name: 'parent_id', type: 'uuid', nullable: true })
+  parentId!: string | null;
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt!: Date;
+}
+
 @Entity('assets')
 export class AssetEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -378,6 +419,18 @@ export class AssetEntity {
   meta!: Record<string, unknown> | null;
   @Column({ name: 'project_id', type: 'varchar', nullable: true })
   projectId!: string | null;
+  @Column({ name: 'folder_id', type: 'uuid', nullable: true })
+  folderId!: string | null;
+  @Column({ type: 'text', array: true, default: () => "'{}'" })
+  tags!: string[];
+  @Column({ type: 'varchar', nullable: true })
+  title!: string | null;
+  @Column({ name: 'source_task_id', type: 'uuid', nullable: true })
+  sourceTaskId!: string | null;
+  @Column({ name: 'archived_at', type: 'timestamptz', nullable: true })
+  archivedAt!: Date | null;
+  @Column({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  deletedAt!: Date | null;
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }
@@ -534,6 +587,7 @@ export const ENTITIES = [
   MenuGroupEntity,
   MenuItemEntity,
   GenTaskEntity,
+  AssetFolderEntity,
   AssetEntity,
   UsageLedgerEntity,
   BatchJobEntity,

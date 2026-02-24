@@ -16,10 +16,31 @@ export class TasksService {
     private readonly providerAdapter: ProviderAAdapter,
   ) {}
 
+  private safeTask(task: GenTaskEntity) {
+    return {
+      id: task.id,
+      tenantId: task.tenantId,
+      userId: task.userId,
+      type: task.type,
+      templateId: task.templateId,
+      toolId: task.toolId,
+      status: task.status,
+      input: task.input,
+      output: task.output,
+      progress: task.progress,
+      resultUrl: task.resultUrl,
+      errorCode: task.errorCode,
+      errorMessage: task.errorMessage,
+      providerTaskId: task.providerTaskId,
+      createdAt: task.createdAt,
+      updatedAt: task.updatedAt,
+    };
+  }
+
   async runTask(userId: string, tenantId: string, type: 'template' | 'tool', id: string, input: Record<string, unknown>) {
-    const entitled = await this.entitlementRepo.findOne({ where: { tenantId, itemType: type, itemId: id, enabled: true } });
-    if (!entitled) {
-      return { ok: false, error: { code: 'FORBIDDEN', message: '当前租户未开通该创作模板或工具' } };
+    const entitled = await this.entitlementRepo.findOne({ where: { tenantId, itemType: type, itemId: id } });
+    if (!entitled || !entitled.enabled) {
+      return { ok: false, error: { code: 'NOT_ENTITLED', message: '当前套餐未开通该工具', hint: '升级套餐后可立即使用。' } };
     }
 
     const task = await this.taskRepo.save(this.taskRepo.create({
@@ -46,8 +67,11 @@ export class TasksService {
       await this.assetRepo.save(this.assetRepo.create({
         tenantId,
         taskId: task.id,
+        sourceTaskId: task.id,
         type: result.assetType,
         contentUrl: result.resultUrl,
+        title: `${type} 输出结果`,
+        tags: ['自动生成'],
         meta: { from: type, itemId: id },
       }));
 
@@ -56,27 +80,29 @@ export class TasksService {
         userId,
         resourceType: 'generation',
         amount: 1,
-        reason: `${type} run`,
+        reason: `${type}:${id}`,
         taskId: task.id,
       }));
 
-      return { ok: true, data: task };
+      return { ok: true, data: this.safeTask(task) };
     } catch (e) {
       task.status = 'failed';
-      task.errorCode = 'PROVIDER_EXECUTION_FAILED';
-      task.errorMessage = '任务执行失败，请稍后重试';
+      task.errorCode = 'ENGINE_TIMEOUT';
+      task.errorMessage = '计算引擎繁忙，请稍后重试';
       await this.taskRepo.save(task);
-      return { ok: false, error: { code: 'PROVIDER_EXECUTION_FAILED', message: '任务执行失败，请稍后重试', traceId: task.id } };
+      return { ok: false, error: { code: 'ENGINE_TIMEOUT', message: '计算引擎繁忙，请稍后重试', traceId: task.id, hint: '可简化输入后重试。' } };
     }
   }
 
   async list(tenantId: string, status?: string) {
     const where = status ? { tenantId, status } : { tenantId };
-    return { ok: true, data: await this.taskRepo.find({ where, order: { createdAt: 'DESC' } }) };
+    const rows = await this.taskRepo.find({ where, order: { createdAt: 'DESC' } });
+    return { ok: true, data: rows.map((r) => this.safeTask(r)) };
   }
 
   async detail(tenantId: string, id: string) {
-    return { ok: true, data: await this.taskRepo.findOne({ where: { tenantId, id } }) };
+    const task = await this.taskRepo.findOne({ where: { tenantId, id } });
+    return { ok: true, data: task ? this.safeTask(task) : null };
   }
 
   async retry(tenantId: string, id: string) {
@@ -90,6 +116,6 @@ export class TasksService {
     if (!task) return { ok: false, error: { code: 'NOT_FOUND', message: '任务不存在' } };
     task.status = 'canceled';
     await this.taskRepo.save(task);
-    return { ok: true, data: task };
+    return { ok: true, data: this.safeTask(task) };
   }
 }
