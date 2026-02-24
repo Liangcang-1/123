@@ -1,4 +1,4 @@
-# ToB 多租户 AI SaaS（PR-001 Tenancy + RBAC Foundation）
+# ToB 多租户 AI SaaS（PR-002 AI Provider Abstraction）
 
 ## 启动
 ```bash
@@ -11,22 +11,30 @@ docker compose up -d --build
 - Merchant Owner: `owner@example.com / password123`
 - 默认租户 slug: `demo-tenant`
 
-## 关键变化（PR-001）
-- 多租户基础表：`tenants / tenant_users / roles / permissions / role_permissions`
-- Request 级 Tenant 上下文注入（`X-Tenant-Id`）
-- RBAC 权限装饰器/守卫：`@RequirePermissions(...)`
-- 新增端点：`GET /api/me/tenants`
+## PR-002 目标
+- 建立统一 AI Provider 抽象接口：`executeWorkflow(...)`
+- 所有 AI 调用通过 ProviderRegistry，不允许业务层直连上游
+- 新增 `/api/ai/execute`（tenant-scope + permission）用于抽象层联调
 
 ## 环境变量
-- `JWT_SECRET`: JWT 签名密钥
-- `MASTER_KEY`: 平台密钥
-- `E2E_BASE_URL`（可选）: e2e 测试 API 地址，默认 `http://127.0.0.1:4000`
+- `JWT_SECRET`
+- `MASTER_KEY`
+- `E2E_BASE_URL`（可选）
+- `AI_DEFAULT_PROVIDER`（建议本地 `mock`）
+- `RUNNINGHUB_BASE_URL`
+- `RUNNINGHUB_API_KEY`
+- `RUNNINGHUB_WEBHOOK_SECRET`
 
-## 数据库迁移
-compose 的 `migrate` 服务会按 `apps/api/src/database/migrations/*.sql` 自动执行，新增：
-- `0005_tenancy_rbac_foundation.sql`
+## Provider 说明
+- `MockProvider`: 本地/测试使用，立即返回 succeeded
+- `ProviderAProvider`(内部实现): 封装 RunningHub 调用，仅 provider 内部允许出现上游专有字段
 
-## Tenancy 验证（curl）
+## 切换本地 mock provider
+```bash
+export AI_DEFAULT_PROVIDER=mock
+```
+
+## Tenancy + AI 执行验证
 1) 登录拿 token
 ```bash
 curl -sS http://127.0.0.1/api/auth/login \
@@ -34,21 +42,22 @@ curl -sS http://127.0.0.1/api/auth/login \
   -d '{"email":"owner@example.com","password":"password123"}'
 ```
 
-2) 访问租户列表（不要求 `X-Tenant-Id`）
+2) 查询租户
 ```bash
 curl -sS http://127.0.0.1/api/me/tenants -H "Authorization: Bearer <TOKEN>"
 ```
 
-3) 访问 tenant-scope API（必须带 `X-Tenant-Id`）
+3) 调用 AI 抽象接口（需 tenant header）
 ```bash
-curl -sS http://127.0.0.1/api/menu \
+curl -sS http://127.0.0.1/api/ai/execute \
   -H "Authorization: Bearer <TOKEN>" \
-  -H "X-Tenant-Id: <TENANT_ID>"
+  -H "X-Tenant-Id: <TENANT_ID>" \
+  -H 'Content-Type: application/json' \
+  -d '{"workflowRef":"demo-workflow","inputs":{"product":"demo"}}'
 ```
 
 ## 测试
 ```bash
-npm -w apps/api run test:e2e:tenancy
+npm -w apps/api run test:unit:provider
+npm -w apps/api run test:e2e:ai
 ```
-
-该 e2e 会验证 tenant 隔离：使用错误 tenant header 访问 `/api/menu` 必须 403/400。

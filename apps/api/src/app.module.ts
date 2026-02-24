@@ -24,6 +24,7 @@ import { TenancyModule } from './modules/tenancy/tenancy.module';
 import { RequirePermissionsGuard } from './modules/tenancy/require-permissions.guard';
 import { TenancyGuard } from './modules/tenancy/tenancy.guard';
 import { WorkflowsModule } from './workflows/workflows.module';
+import { AiProvidersModule } from './modules/ai-providers/ai-providers.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { WorkflowsModule } from './workflows/workflows.module';
     SettingsModule,
     SeedModule,
     TenancyModule,
+    AiProvidersModule,
   ],
   controllers: [AppController],
   providers: [

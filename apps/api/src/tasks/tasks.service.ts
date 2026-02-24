@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AssetEntity, CatalogTemplateEntity, CatalogToolEntity, GenTaskEntity, TenantEntitlementEntity, UsageLedgerEntity } from '../database/entities';
-import { ProviderAAdapter } from '../providers/provider-a.adapter';
+import { AiExecutionService } from '../modules/ai-providers/ai-execution.service';
 
 @Injectable()
 export class TasksService {
@@ -13,7 +13,7 @@ export class TasksService {
     @InjectRepository(UsageLedgerEntity) private readonly usageRepo: Repository<UsageLedgerEntity>,
     @InjectRepository(CatalogTemplateEntity) private readonly templateRepo: Repository<CatalogTemplateEntity>,
     @InjectRepository(CatalogToolEntity) private readonly toolRepo: Repository<CatalogToolEntity>,
-    private readonly providerAdapter: ProviderAAdapter,
+    private readonly aiExecutionService: AiExecutionService,
   ) {}
 
   private safeTask(task: GenTaskEntity) {
@@ -56,20 +56,25 @@ export class TasksService {
     }));
 
     try {
-      const result = await this.providerAdapter.runTask(input);
-      task.status = 'succeeded';
-      task.progress = 100;
-      task.providerTaskId = result.providerTaskId;
-      task.resultUrl = result.resultUrl;
-      task.output = result.output;
+      const result = await this.aiExecutionService.executeWorkflow({
+        tenantId,
+        userId,
+        workflowRef: id,
+        inputs: input,
+      });
+      task.status = result.status === 'failed' ? 'failed' : 'succeeded';
+      task.progress = task.status === 'succeeded' ? 100 : 50;
+      task.providerTaskId = result.providerJobId;
+      task.resultUrl = String(result.outputs?.resultUrl || '');
+      task.output = result.outputs || null;
       await this.taskRepo.save(task);
 
       await this.assetRepo.save(this.assetRepo.create({
         tenantId,
         taskId: task.id,
         sourceTaskId: task.id,
-        type: result.assetType,
-        contentUrl: result.resultUrl,
+        type: 'image',
+        contentUrl: String(result.outputs?.resultUrl || task.resultUrl || ''),
         title: `${type} 输出结果`,
         tags: ['自动生成'],
         meta: { from: type, itemId: id },
