@@ -24,6 +24,7 @@ import { TenancyModule } from './modules/tenancy/tenancy.module';
 import { RequirePermissionsGuard } from './modules/tenancy/require-permissions.guard';
 import { TenancyGuard } from './modules/tenancy/tenancy.guard';
 import { WorkflowsModule } from './workflows/workflows.module';
+import { ToolMarketplaceModule } from './modules/tool-marketplace/tool-marketplace.module';
 import { AiProvidersModule } from './modules/ai-providers/ai-providers.module';
 
 @Module({
@@ -60,6 +61,7 @@ import { AiProvidersModule } from './modules/ai-providers/ai-providers.module';
     SeedModule,
     TenancyModule,
     AiProvidersModule,
+    ToolMarketplaceModule,
   ],
   controllers: [AppController],
   providers: [

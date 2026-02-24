@@ -574,6 +574,77 @@ export class BatchItemEntity {
   status!: string;
 }
 
+
+@Entity('tools')
+export class ToolEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Column({ name: 'tenant_id', type: 'uuid', nullable: true })
+  tenantId!: string | null;
+
+  @Column({ type: 'varchar' })
+  key!: string;
+
+  @Column({ type: 'varchar' })
+  name!: string;
+
+  @Column({ type: 'text', nullable: true })
+  description!: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  icon!: string | null;
+
+  @Column({ name: 'provider_key', type: 'varchar' })
+  providerKey!: string;
+
+  @Column({ name: 'workflow_ref', type: 'varchar' })
+  workflowRef!: string;
+
+  @Column({ name: 'input_schema', type: 'jsonb' })
+  inputSchema!: Record<string, unknown>;
+
+  @Column({ name: 'output_schema', type: 'jsonb', nullable: true })
+  outputSchema!: Record<string, unknown> | null;
+
+  @Column({ type: 'varchar', default: 'draft' })
+  status!: 'draft' | 'active' | 'archived';
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt!: Date;
+}
+
+@Entity('tool_menu_items')
+@Unique(['tenantId', 'toolId'])
+export class ToolMenuItemEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Column({ name: 'tenant_id', type: 'uuid' })
+  tenantId!: string;
+
+  @Column({ name: 'tool_id', type: 'uuid' })
+  toolId!: string;
+
+  @Column({ name: 'name_override', type: 'varchar', nullable: true })
+  nameOverride!: string | null;
+
+  @Column({ name: 'sort_order', type: 'int', default: 0 })
+  sortOrder!: number;
+
+  @Column({ type: 'boolean', default: true })
+  enabled!: boolean;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt!: Date;
+}
+
 @Entity('provider_config_versions')
 @Unique(['providerKey', 'version'])
 export class ProviderConfigVersionEntity {
@@ -691,6 +762,8 @@ export const ENTITIES = [
   UsageLedgerEntity,
   BatchJobEntity,
   BatchItemEntity,
+  ToolEntity,
+  ToolMenuItemEntity,
   ProviderConfigVersionEntity,
   SecretVaultEntity,
   AdminLogEntity,

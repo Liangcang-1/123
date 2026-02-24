@@ -9,7 +9,9 @@
     "lint": "tsc --noEmit",
     "test:e2e:tenancy": "node test/tenancy-isolation.e2e.js",
     "test:unit:provider": "node test/mock-provider.unit.js",
-    "test:e2e:ai": "node test/ai-execute.integration.e2e.js"
+    "test:e2e:ai": "node test/ai-execute.integration.e2e.js",
+    "test:e2e:tools-list": "node test/tools-list.integration.e2e.js",
+    "test:e2e:tool-menu-scope": "node test/tool-menu-scope.integration.e2e.js"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

@@ -17,9 +17,11 @@ export class AiExecutionService {
     this.registry.register(runningHubProvider);
   }
 
-  async executeWorkflow(params: ExecuteWorkflowParams) {
-    const provider = this.registry.get(this.providerConfig.getDefaultProviderKey());
-    const result = await provider.executeWorkflow(params);
+  async executeWorkflow(params: ExecuteWorkflowParams & { providerKeyOverride?: string }) {
+    const providerKey = params.providerKeyOverride || this.providerConfig.getDefaultProviderKey();
+    const provider = this.registry.get(providerKey);
+    const { providerKeyOverride: _providerKeyOverride, ...executeParams } = params;
+    const result = await provider.executeWorkflow(executeParams);
     return {
       providerJobId: result.providerJobId,
       status: result.status,

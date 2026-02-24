@@ -18,6 +18,10 @@ export default function LoginPage() {
     const data = await res.json();
     if (data?.ok && data?.data?.accessToken) {
       localStorage.setItem('token', data.data.accessToken);
+      const tenantRes = await fetch('/api/me/tenants', { headers: { Authorization: `Bearer ${data.data.accessToken}` } });
+      const tenantData = await tenantRes.json();
+      const tenantId = tenantData?.data?.[0]?.tenantId;
+      if (tenantId) localStorage.setItem('tenantId', tenantId);
       router.push('/dashboard');
     } else {
       setMsg(data?.error?.message || '登录失败');

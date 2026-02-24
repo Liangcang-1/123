@@ -14,6 +14,8 @@ import {
   RoleEntity,
   PermissionEntity,
   RolePermissionEntity,
+  ToolEntity,
+  ToolMenuItemEntity,
   UsageLedgerEntity,
   UserEntity,
 } from '../database/entities';
@@ -37,6 +39,8 @@ import { SeedService } from './seed.service';
       RoleEntity,
       PermissionEntity,
       RolePermissionEntity,
+      ToolEntity,
+      ToolMenuItemEntity,
     ]),
   ],
   providers: [SeedService],

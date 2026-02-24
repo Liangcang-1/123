@@ -16,6 +16,8 @@ import {
   RoleEntity,
   PermissionEntity,
   RolePermissionEntity,
+  ToolEntity,
+  ToolMenuItemEntity,
   UsageLedgerEntity,
   UserEntity,
 } from '../database/entities';
@@ -38,6 +40,8 @@ export class SeedService implements OnModuleInit {
     @InjectRepository(RoleEntity) private readonly roleRepo: Repository<RoleEntity>,
     @InjectRepository(PermissionEntity) private readonly permissionRepo: Repository<PermissionEntity>,
     @InjectRepository(RolePermissionEntity) private readonly rolePermissionRepo: Repository<RolePermissionEntity>,
+    @InjectRepository(ToolEntity) private readonly marketplaceToolRepo: Repository<ToolEntity>,
+    @InjectRepository(ToolMenuItemEntity) private readonly marketplaceMenuRepo: Repository<ToolMenuItemEntity>,
   ) {}
 
   async onModuleInit() {
@@ -123,6 +127,52 @@ export class SeedService implements OnModuleInit {
       this.entitlementRepo.create({ tenantId: tenant.id, itemType: 'tool', itemId: tools[1].id, enabled: true }),
       this.entitlementRepo.create({ tenantId: tenant.id, itemType: 'tool', itemId: tools[2].id, enabled: false }),
     ]);
+
+
+    const systemMarketplaceTools = await this.marketplaceToolRepo.save([
+      this.marketplaceToolRepo.create({
+        tenantId: null,
+        key: 'product-image-generator',
+        name: '商品图生成器',
+        description: '生成商品主图与变体图',
+        icon: 'Image',
+        providerKey: 'mock',
+        workflowRef: 'wf-product-image',
+        inputSchema: {
+          title: 'Product Image Generator',
+          fields: [
+            { key: 'prompt', label: 'Prompt', type: 'textarea', required: true },
+            { key: 'size', label: 'Size', type: 'select', options: ['1024x1024', '1024x1536'], required: false, default: '1024x1024' },
+          ],
+        },
+        outputSchema: { type: 'image' },
+        status: 'active',
+      }),
+      this.marketplaceToolRepo.create({
+        tenantId: null,
+        key: 'short-video-extend',
+        name: '短视频脚本扩写',
+        description: '扩写短视频分镜与口播文案',
+        icon: 'Video',
+        providerKey: 'mock',
+        workflowRef: 'wf-video-extend',
+        inputSchema: {
+          title: 'Short Video Extend',
+          fields: [
+            { key: 'prompt', label: 'Prompt', type: 'textarea', required: true },
+            { key: 'duration', label: 'Duration', type: 'number', required: false },
+          ],
+        },
+        outputSchema: { type: 'text' },
+        status: 'active',
+      }),
+    ]);
+
+    await this.marketplaceMenuRepo.save(
+      systemMarketplaceTools.map((tool, index) =>
+        this.marketplaceMenuRepo.create({ tenantId: tenant.id, toolId: tool.id, enabled: true, sortOrder: index }),
+      ),
+    );
 
     const folder = await this.folderRepo.save(this.folderRepo.create({ tenantId: tenant.id, name: '默认素材夹', parentId: null }));
     const task = await this.taskRepo.save(this.taskRepo.create({
