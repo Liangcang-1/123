@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AdminModule } from '../admin/admin.module';
-import { ConfigModule } from '../config/config.module';
-import { GenTaskEntity } from '../database/entities';
+import { AssetEntity, CatalogTemplateEntity, CatalogToolEntity, GenTaskEntity, TenantEntitlementEntity, UsageLedgerEntity } from '../database/entities';
+import { ProvidersModule } from '../providers/providers.module';
 import { TasksController } from './tasks.controller';
 import { TasksService } from './tasks.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([GenTaskEntity]), ConfigModule, AdminModule],
+  imports: [TypeOrmModule.forFeature([GenTaskEntity, TenantEntitlementEntity, AssetEntity, UsageLedgerEntity, CatalogTemplateEntity, CatalogToolEntity]), ProvidersModule],
   controllers: [TasksController],
   providers: [TasksService],
+  exports: [TasksService],
 })
 export class TasksModule {}

@@ -1,92 +1,69 @@
-# 电商内容生成平台 MVP（SaaS）
+# 电商商家 AI 创作与运营工具平台（SaaS MVP）
 
-仓库结构：
+## 架构
+- Monorepo: `apps/api` (NestJS + TypeORM + PostgreSQL) / `apps/web` (Next.js 14)
+- 部署: Docker Compose (`postgres` / `redis` / `migrate` / `api` / `web` / `nginx`)
 
-```text
-root/
- ├─ apps/
- │   ├─ api/
- │   └─ web/
- ├─ docker-compose.yml
- ├─ nginx/
- │   └─ conf.d/app.conf
- ├─ .env.example
- ├─ scripts/
- │   └─ deploy.sh
- └─ README.md
-```
+## 核心能力
+- 多租户（Tenant）+ 角色（OWNER/ADMIN/MEMBER）
+- 平台后台可配置 Provider、同步 Catalog、编排商家端菜单、租户授权
+- 商家端动态菜单 -> 创作提交 -> 任务状态 -> 素材入库闭环
 
-## API（关键）
+## 关键 API
+- Auth: `POST /api/auth/login`, `GET /api/me`
+- Menu/Catalog: `GET /api/menu`, `GET /api/catalog/templates`, `GET /api/catalog/tools`
+- Tasks: `POST /api/tasks/run`, `GET /api/tasks`, `GET /api/tasks/:id`, `POST /api/tasks/:id/retry`, `POST /api/tasks/:id/cancel`
+- Assets: `GET /api/assets`, `GET /api/assets/:id`
+- Settings: `GET/PUT /api/settings`
+- Admin: `GET/POST /api/admin/provider-configs`, `POST /api/admin/catalog/sync`, `GET/POST /api/admin/menu/groups`, `GET/POST /api/admin/menu/items`, `GET/POST /api/admin/tenants/:id/entitlements`, `GET /api/admin/audit-logs`
 
-- `GET /api/health` -> `{ "status": "ok" }`
-- `POST /api/auth/login`
-- `GET /api/me`
-- `GET /api/admin/provider-configs`
-- `POST /api/admin/provider-configs`
-- `POST /api/admin/provider-configs/version`
-- `POST /api/admin/provider-configs/rollback`
-- `POST /api/admin/secrets`
-- `PATCH /api/admin/secrets/rotate`
-
-## Docker 生产部署
-
-### 1) 安装 Docker 与 Docker Compose
-在 Linux 服务器安装 Docker Engine + Docker Compose Plugin。
-
-### 2) 准备环境变量
-
+## Docker 生产部署（增量，不清空）
 ```bash
 cp .env.example .env
-# 编辑 .env，填写 MASTER_KEY 与 JWT_SECRET
-```
+# 填写 MASTER_KEY / JWT_SECRET
 
-> 不要把 OPENAI_API_KEY / RUNNINGHUB_API_KEY 放入 env，这些必须在后台 Secrets Vault 管理。
-
-### 3) 一键上线
-
-```bash
 docker compose up -d --build
 ```
 
-或：
-
+### 一键脚本
 ```bash
 bash scripts/deploy.sh
 ```
 
-### 4) 首次初始化（必须）
-1. 访问 `http://SERVER_IP/admin/provider-config`
-2. 配置 `openai_chat` 与 `runninghub` provider
-3. 在 Secrets Vault 填写并轮换 `OPENAI_API_KEY` / `RUNNINGHUB_API_KEY`
+脚本会：
+1. 校验 `.env`（不存在则从 `.env.example` 复制）
+2. 执行 `docker compose up -d --build`
+3. 输出服务状态
 
-### 5) 常用命令
+## 首次初始化
+- 默认演示账号（seed）
+  - 邮箱：`owner@example.com`
+  - 密码：`password123`
+- 登录后可看到默认菜单、模板、工具、任务与素材入口。
 
+## 运维排查
 ```bash
+docker compose ps
 docker compose logs -f api
 docker compose logs -f web
 docker compose logs -f nginx
-docker compose ps
-docker compose down
 ```
 
-## 迁移机制
-
-`migrate` 服务会在 `postgres` 健康后自动执行 `apps/api/src/database/migrations/*.sql`。
-
-- 首次执行会自动创建 `schema_migrations(version, applied_at)`
-- 已执行版本按文件名去重，不会重复执行
-- 失败会非 0 退出并阻断后续依赖服务启动
-
-## GitHub 默认显示 `main` 分支
-
-如果你本地开发分支是 `work`，希望 GitHub 仓库默认展示 `main`：
-
+### 端口冲突（宿主机 Nginx 占用 80）
 ```bash
-# 1) 基于当前代码创建/更新 main
-git checkout -B main
-
-# 2) 推送到远端 main
-git push -u origin main
+sudo systemctl stop nginx
+# 或修改 docker-compose.yml 的 nginx 映射端口，如 "8080:80"
 ```
 
-然后在 GitHub 仓库的 **Settings → Branches → Default branch** 中选择 `main`。
+## Healthcheck
+- API: `GET /api/health` -> `{"status":"ok"}`
+- Web: `/` 返回 200
+- Nginx: `/` 与 `/api/health` 均可访问
+
+## 验收 Checklist
+- [ ] `docker compose ps` 全部 healthy
+- [ ] 访问 `http://<server-ip>/` 可见登录页/工作台
+- [ ] Admin 修改菜单后商家端左侧菜单即时变化
+- [ ] 商家端能创建任务并在任务中心查看状态
+- [ ] 任务成功后素材库可看到新资产记录
+- [ ] 商家端页面与接口无 Provider 实现品牌暴露

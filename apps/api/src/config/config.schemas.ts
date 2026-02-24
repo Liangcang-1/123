@@ -25,10 +25,10 @@ export function validateProviderConfig(providerKey: ProviderKey, config: Record<
     return;
   }
 
-  if (providerKey === 'runninghub') {
-    if (typeof config.endpoint !== 'string') throw new BadRequestException('runninghub.endpoint is required');
-    if (typeof config.queue_limit !== 'number') throw new BadRequestException('runninghub.queue_limit must be number');
-    if (typeof config.timeout !== 'number') throw new BadRequestException('runninghub.timeout must be number');
+  if (providerKey === 'provider_a' || providerKey === 'runninghub') {
+    if (typeof config.endpoint !== 'string') throw new BadRequestException('provider.endpoint is required');
+    if (typeof config.queue_limit !== 'number') throw new BadRequestException('provider.queue_limit must be number');
+    if (typeof config.timeout !== 'number') throw new BadRequestException('provider.timeout must be number');
     validateEndpoint(String(config.endpoint));
     return;
   }

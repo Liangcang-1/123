@@ -1,4 +1,4 @@
-export type ProviderKey = 'openai_chat' | 'runninghub' | 'storage';
+export type ProviderKey = 'openai_chat' | 'provider_a' | 'runninghub' | 'storage';
 
 export type OpenAIChatConfig = {
   model: string;
@@ -8,7 +8,7 @@ export type OpenAIChatConfig = {
   endpoint?: string;
 };
 
-export type RunninghubConfig = {
+export type ProviderAConfig = {
   endpoint: string;
   api_key_secret_ref?: string;
   queue_limit: number;

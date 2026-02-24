@@ -10,16 +10,16 @@ const defaultChatConfig = {
   endpoint: 'https://api.openai.com/v1/chat/completions',
 };
 
-const defaultRunninghubConfig = {
-  endpoint: 'https://api.runninghub.com/v1',
-  api_key_secret_ref: 'runninghub_api_key',
+const defaultProviderConfig = {
+  endpoint: 'https://provider-a.example.com/v1',
+  api_key_secret_ref: 'provider_a_api_key',
   queue_limit: 20,
   timeout: 45000,
 };
 
 export default function ProviderConfigPage() {
   const [chatJson, setChatJson] = useState(JSON.stringify(defaultChatConfig, null, 2));
-  const [runninghubJson, setRunninghubJson] = useState(JSON.stringify(defaultRunninghubConfig, null, 2));
+  const [providerJson, setProviderJson] = useState(JSON.stringify(defaultProviderConfig, null, 2));
   const [secretValue, setSecretValue] = useState('');
 
   return (
@@ -36,8 +36,8 @@ export default function ProviderConfigPage() {
         </section>
 
         <section className="rounded-xl bg-white p-4 shadow">
-          <h2 className="font-semibold mb-2">2) RunningHub Provider</h2>
-          <textarea className="w-full h-56 rounded border p-2 font-mono text-xs" value={runninghubJson} onChange={(e) => setRunninghubJson(e.target.value)} />
+          <h2 className="font-semibold mb-2">2) External Provider A</h2>
+          <textarea className="w-full h-56 rounded border p-2 font-mono text-xs" value={providerJson} onChange={(e) => setProviderJson(e.target.value)} />
           <div className="mt-2 flex gap-2">
             <button className="rounded bg-blue-600 px-3 py-1 text-white">保存生成版本</button>
             <button className="rounded bg-slate-700 px-3 py-1 text-white">回滚</button>

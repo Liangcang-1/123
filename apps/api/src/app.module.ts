@@ -7,10 +7,15 @@ import { AppController } from './app.controller';
 import { AssetsModule } from './assets/assets.module';
 import { AuthModule } from './auth/auth.module';
 import { BatchModule } from './batch/batch.module';
+import { CatalogModule } from './catalog/catalog.module';
 import { ConfigModule } from './config/config.module';
 import { ENTITIES } from './database/entities';
 import { MembershipModule } from './membership/membership.module';
+import { MenuModule } from './menu/menu.module';
 import { ProjectsModule } from './projects/projects.module';
+import { ProvidersModule } from './providers/providers.module';
+import { SettingsModule } from './settings/settings.module';
+import { SeedModule } from './seed/seed.module';
 import { TasksModule } from './tasks/tasks.module';
 import { ToolsModule } from './tools/tools.module';
 import { WorkflowsModule } from './workflows/workflows.module';
@@ -31,6 +36,7 @@ import { WorkflowsModule } from './workflows/workflows.module';
       synchronize: false,
     }),
     ConfigModule,
+    ProvidersModule,
     AuthModule,
     MembershipModule,
     ProjectsModule,
@@ -40,6 +46,10 @@ import { WorkflowsModule } from './workflows/workflows.module';
     AssetsModule,
     BatchModule,
     AdminModule,
+    MenuModule,
+    CatalogModule,
+    SettingsModule,
+    SeedModule,
   ],
   controllers: [AppController],
 })

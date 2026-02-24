@@ -3,12 +3,13 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { compareSync } from 'bcryptjs';
 import { Repository } from 'typeorm';
-import { UserEntity } from '../database/entities';
+import { TenantEntity, UserEntity } from '../database/entities';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(UserEntity) private readonly userRepo: Repository<UserEntity>,
+    @InjectRepository(TenantEntity) private readonly tenantRepo: Repository<TenantEntity>,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -17,11 +18,14 @@ export class AuthService {
     if (!user || !compareSync(password, user.passwordHash)) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    const token = await this.jwtService.signAsync({ sub: user.id, email: user.email });
-    return { accessToken: token, user: { id: user.id, email: user.email } };
+    const token = await this.jwtService.signAsync({ sub: user.id, email: user.email, tenantId: user.tenantId, role: user.role });
+    return { ok: true, data: { accessToken: token, user: { id: user.id, email: user.email, tenantId: user.tenantId, role: user.role } } };
   }
 
   async me(userId: string) {
-    return this.userRepo.findOne({ where: { id: userId }, select: ['id', 'email', 'createdAt'] });
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) return null;
+    const tenant = user.tenantId ? await this.tenantRepo.findOne({ where: { id: user.tenantId } }) : null;
+    return { ok: true, data: { user: { id: user.id, email: user.email, role: user.role }, tenant } };
   }
 }
