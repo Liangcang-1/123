@@ -59,7 +59,7 @@ export class AdminService {
     const current = await this.providerConfigRepo.findOne({ where: { providerKey: payload.providerKey } });
     await this.providerConfigRepo.save(this.providerConfigRepo.create({
       id: current?.id,
-      providerKey: payload.providerKey === 'runninghub' ? 'provider_a' : payload.providerKey,
+      providerKey: payload.providerKey,
       configJson: payload.configJson,
       isActive: true,
       enabled: true,

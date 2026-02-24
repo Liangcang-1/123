@@ -1,4 +1,4 @@
-export type ProviderKey = 'openai_chat' | 'provider_a' | 'runninghub' | 'storage';
+export type ProviderKey = 'openai_chat' | 'provider_a' | 'storage';
 
 export type OpenAIChatConfig = {
   model: string;

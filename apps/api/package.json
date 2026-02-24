@@ -6,7 +6,8 @@
     "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/main.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test:e2e:tenancy": "node test/tenancy-isolation.e2e.js"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

@@ -18,6 +18,9 @@ export class TenantEntity {
   @Column({ type: 'varchar' })
   name!: string;
 
+  @Column({ type: 'varchar', unique: true, nullable: true })
+  slug!: string | null;
+
   @Column({ type: 'varchar', default: 'free' })
   plan!: string;
 
@@ -26,6 +29,9 @@ export class TenantEntity {
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt!: Date;
 }
 
 @Entity('users')
@@ -43,14 +49,103 @@ export class UserEntity {
   @Column({ name: 'password_hash', type: 'varchar' })
   passwordHash!: string;
 
+  @Column({ name: 'display_name', type: 'varchar', nullable: true })
+  displayName!: string | null;
+
+  @Column({ type: 'varchar', default: 'active' })
+  status!: string;
+
   @Column({ type: 'varchar', default: 'OWNER' })
   role!: 'OWNER' | 'ADMIN' | 'MEMBER';
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt!: Date;
+
   @OneToMany(() => SubscriptionEntity, (sub) => sub.user)
   subscriptions!: SubscriptionEntity[];
+}
+
+
+@Entity('roles')
+@Unique(['tenantId', 'key'])
+export class RoleEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Column({ name: 'tenant_id', type: 'uuid', nullable: true })
+  tenantId!: string | null;
+
+  @Column({ type: 'varchar' })
+  key!: 'owner' | 'admin' | 'member';
+
+  @Column({ type: 'varchar' })
+  name!: string;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt!: Date;
+}
+
+@Entity('permissions')
+@Unique(['key'])
+export class PermissionEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Column({ type: 'varchar' })
+  key!: string;
+
+  @Column({ type: 'varchar' })
+  name!: string;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt!: Date;
+}
+
+@Entity('tenant_users')
+@Unique(['tenantId', 'userId'])
+export class TenantUserEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Column({ name: 'tenant_id', type: 'uuid' })
+  tenantId!: string;
+
+  @Column({ name: 'user_id', type: 'uuid' })
+  userId!: string;
+
+  @Column({ name: 'role_id', type: 'uuid', nullable: true })
+  roleId!: string | null;
+
+  @Column({ type: 'varchar', default: 'active' })
+  status!: 'active' | 'invited' | 'disabled';
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt!: Date;
+}
+
+@Entity('role_permissions')
+@Unique(['roleId', 'permissionId'])
+export class RolePermissionEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Column({ name: 'role_id', type: 'uuid' })
+  roleId!: string;
+
+  @Column({ name: 'permission_id', type: 'uuid' })
+  permissionId!: string;
 }
 
 @Entity('subscriptions')
@@ -575,6 +670,10 @@ export class AuditLogEntity {
 export const ENTITIES = [
   TenantEntity,
   UserEntity,
+  RoleEntity,
+  PermissionEntity,
+  TenantUserEntity,
+  RolePermissionEntity,
   SubscriptionEntity,
   ProjectEntity,
   ToolDefinitionEntity,

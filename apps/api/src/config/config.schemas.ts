@@ -25,7 +25,7 @@ export function validateProviderConfig(providerKey: ProviderKey, config: Record<
     return;
   }
 
-  if (providerKey === 'provider_a' || providerKey === 'runninghub') {
+  if (providerKey === 'provider_a') {
     if (typeof config.endpoint !== 'string') throw new BadRequestException('provider.endpoint is required');
     if (typeof config.queue_limit !== 'number') throw new BadRequestException('provider.queue_limit must be number');
     if (typeof config.timeout !== 'number') throw new BadRequestException('provider.timeout must be number');

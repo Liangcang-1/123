@@ -12,6 +12,10 @@ import {
   MenuItemEntity,
   TenantEntitlementEntity,
   TenantEntity,
+  TenantUserEntity,
+  RoleEntity,
+  PermissionEntity,
+  RolePermissionEntity,
   UsageLedgerEntity,
   UserEntity,
 } from '../database/entities';
@@ -30,15 +34,46 @@ export class SeedService implements OnModuleInit {
     @InjectRepository(AssetEntity) private readonly assetRepo: Repository<AssetEntity>,
     @InjectRepository(AssetFolderEntity) private readonly folderRepo: Repository<AssetFolderEntity>,
     @InjectRepository(UsageLedgerEntity) private readonly usageRepo: Repository<UsageLedgerEntity>,
+    @InjectRepository(TenantUserEntity) private readonly tenantUserRepo: Repository<TenantUserEntity>,
+    @InjectRepository(RoleEntity) private readonly roleRepo: Repository<RoleEntity>,
+    @InjectRepository(PermissionEntity) private readonly permissionRepo: Repository<PermissionEntity>,
+    @InjectRepository(RolePermissionEntity) private readonly rolePermissionRepo: Repository<RolePermissionEntity>,
   ) {}
 
   async onModuleInit() {
     const count = await this.tenantRepo.count();
     if (count > 0) return;
 
-    const tenant = await this.tenantRepo.save(this.tenantRepo.create({ name: '演示商家', plan: 'pro' }));
-    const admin = await this.userRepo.save(this.userRepo.create({ tenantId: tenant.id, email: 'admin@example.com', passwordHash: hashSync('password123', 10), role: 'ADMIN' }));
-    const merchant = await this.userRepo.save(this.userRepo.create({ tenantId: tenant.id, email: 'owner@example.com', passwordHash: hashSync('password123', 10), role: 'OWNER' }));
+    const tenant = await this.tenantRepo.save(this.tenantRepo.create({ name: '演示商家', slug: 'demo-tenant', plan: 'pro' }));
+    const admin = await this.userRepo.save(this.userRepo.create({ tenantId: tenant.id, email: 'admin@example.com', passwordHash: hashSync('password123', 10), displayName: 'Demo Admin', status: 'active', role: 'ADMIN' }));
+    const merchant = await this.userRepo.save(this.userRepo.create({ tenantId: tenant.id, email: 'owner@example.com', passwordHash: hashSync('password123', 10), displayName: 'Demo Owner', status: 'active', role: 'OWNER' }));
+
+
+    const systemRoles = await this.roleRepo.save([
+      this.roleRepo.create({ tenantId: null, key: 'owner', name: 'Owner' }),
+      this.roleRepo.create({ tenantId: null, key: 'admin', name: 'Admin' }),
+      this.roleRepo.create({ tenantId: null, key: 'member', name: 'Member' }),
+    ]);
+
+    const permissions = await this.permissionRepo.save([
+      this.permissionRepo.create({ key: 'tool.read', name: 'Read tools' }),
+      this.permissionRepo.create({ key: 'tool.manage', name: 'Manage tools' }),
+      this.permissionRepo.create({ key: 'job.read', name: 'Read jobs' }),
+      this.permissionRepo.create({ key: 'job.manage', name: 'Manage jobs' }),
+      this.permissionRepo.create({ key: 'asset.read', name: 'Read assets' }),
+      this.permissionRepo.create({ key: 'asset.manage', name: 'Manage assets' }),
+      this.permissionRepo.create({ key: 'billing.read', name: 'Read billing' }),
+      this.permissionRepo.create({ key: 'billing.manage', name: 'Manage billing' }),
+    ]);
+
+    const ownerRole = systemRoles.find((r) => r.key === 'owner');
+    if (ownerRole) {
+      await this.rolePermissionRepo.save(
+        permissions.map((p) => this.rolePermissionRepo.create({ roleId: ownerRole.id, permissionId: p.id })),
+      );
+      await this.tenantUserRepo.save(this.tenantUserRepo.create({ tenantId: tenant.id, userId: merchant.id, roleId: ownerRole.id, status: 'active' }));
+      await this.tenantUserRepo.save(this.tenantUserRepo.create({ tenantId: tenant.id, userId: admin.id, roleId: ownerRole.id, status: 'active' }));
+    }
 
     const presetBase = {
       scenes: { values: ['上新', '大促', '直播间'] },

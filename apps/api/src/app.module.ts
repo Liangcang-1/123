@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule as NestConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -10,7 +11,7 @@ import { BatchModule } from './batch/batch.module';
 import { BillingModule } from './billing/billing.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { ConfigModule } from './config/config.module';
-import { ENTITIES } from './database/entities';
+import { ENTITIES, RoleEntity, TenantEntity, TenantUserEntity } from './database/entities';
 import { MembershipModule } from './membership/membership.module';
 import { MenuModule } from './menu/menu.module';
 import { ProjectsModule } from './projects/projects.module';
@@ -19,6 +20,9 @@ import { SettingsModule } from './settings/settings.module';
 import { SeedModule } from './seed/seed.module';
 import { TasksModule } from './tasks/tasks.module';
 import { ToolsModule } from './tools/tools.module';
+import { TenancyModule } from './modules/tenancy/tenancy.module';
+import { RequirePermissionsGuard } from './modules/tenancy/require-permissions.guard';
+import { TenancyGuard } from './modules/tenancy/tenancy.guard';
 import { WorkflowsModule } from './workflows/workflows.module';
 
 @Module({
@@ -36,6 +40,7 @@ import { WorkflowsModule } from './workflows/workflows.module';
       entities: ENTITIES,
       synchronize: false,
     }),
+    TypeOrmModule.forFeature([TenantUserEntity, TenantEntity, RoleEntity]),
     ConfigModule,
     ProvidersModule,
     AuthModule,
@@ -52,7 +57,12 @@ import { WorkflowsModule } from './workflows/workflows.module';
     CatalogModule,
     SettingsModule,
     SeedModule,
+    TenancyModule,
   ],
   controllers: [AppController],
+  providers: [
+    { provide: APP_GUARD, useClass: TenancyGuard },
+    { provide: APP_GUARD, useClass: RequirePermissionsGuard },
+  ],
 })
 export class AppModule {}

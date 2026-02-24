@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TenantEntity, UsageLedgerEntity } from '../database/entities';
 import { getOptionalAuthUser } from '../common/auth.util';
+import { RequirePermissions } from '../modules/tenancy/require-permissions.decorator';
 
 @Controller('billing')
 export class BillingController {
@@ -20,6 +21,7 @@ export class BillingController {
     return tenant?.id || '';
   }
 
+  @RequirePermissions('billing.read')
   @Get('summary')
   async summary(@Headers('authorization') authHeader?: string) {
     const tenantId = await this.resolveTenant(authHeader);
@@ -29,6 +31,7 @@ export class BillingController {
     return { ok: true, data: { monthUsed: used, quota: limit, remaining: Math.max(limit - used, 0), plan: 'pro' } };
   }
 
+  @RequirePermissions('billing.read')
   @Get('by-tool')
   async byTool(@Headers('authorization') authHeader?: string) {
     const tenantId = await this.resolveTenant(authHeader);

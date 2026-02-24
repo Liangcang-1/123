@@ -1,54 +1,54 @@
-# 电商商家 AI 创作与运营工具平台（SaaS V1）
+# ToB 多租户 AI SaaS（PR-001 Tenancy + RBAC Foundation）
 
-## 项目结构
-- `apps/api`: NestJS + TypeORM + PostgreSQL
-- `apps/web`: Next.js 14 App Router
-- `docker-compose.yml`: postgres/redis/migrate/api/web/nginx 一体化部署
-
-## 默认账号（空库首次启动自动 seed）
-- 平台管理员：`admin@example.com / password123`
-- 商家账号：`owner@example.com / password123`
-
-## 一键部署（增量，不清库）
+## 启动
 ```bash
 cp .env.example .env
-# 填写 MASTER_KEY / JWT_SECRET
-
 docker compose up -d --build
 ```
 
-## 验收命令
+## 默认种子账号（开发环境）
+- Admin: `admin@example.com / password123`
+- Merchant Owner: `owner@example.com / password123`
+- 默认租户 slug: `demo-tenant`
+
+## 关键变化（PR-001）
+- 多租户基础表：`tenants / tenant_users / roles / permissions / role_permissions`
+- Request 级 Tenant 上下文注入（`X-Tenant-Id`）
+- RBAC 权限装饰器/守卫：`@RequirePermissions(...)`
+- 新增端点：`GET /api/me/tenants`
+
+## 环境变量
+- `JWT_SECRET`: JWT 签名密钥
+- `MASTER_KEY`: 平台密钥
+- `E2E_BASE_URL`（可选）: e2e 测试 API 地址，默认 `http://127.0.0.1:4000`
+
+## 数据库迁移
+compose 的 `migrate` 服务会按 `apps/api/src/database/migrations/*.sql` 自动执行，新增：
+- `0005_tenancy_rbac_foundation.sql`
+
+## Tenancy 验证（curl）
+1) 登录拿 token
 ```bash
-curl -sS http://127.0.0.1/api/health
-curl -sS http://127.0.0.1/api/menu
-curl -sS http://127.0.0.1/api/billing/summary
+curl -sS http://127.0.0.1/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"owner@example.com","password":"password123"}'
 ```
 
-## 功能闭环
-1. 登录商家账号进入 `/dashboard`
-2. 左侧菜单选择模板/工具，进入 `/tools/:menuItemId`
-3. 提交生成任务，结果自动写入任务中心 `/tasks` 与素材库 `/assets`
-4. 未开通工具灰态可见，点击可查看升级引导
-
-## 关键 API
-- `GET /api/menu`（含 version、分组、灰态工具信息）
-- `GET /api/tools/:menuItemId/meta`
-- `POST /api/tasks/run`
-- `GET /api/tasks`
-- `GET /api/assets`, `POST /api/assets/folders`, `PATCH /api/assets/:id`, `DELETE /api/assets/:id`
-- `GET /api/billing/summary`, `GET /api/billing/by-tool`
-
-## 运维排查
+2) 访问租户列表（不要求 `X-Tenant-Id`）
 ```bash
-docker compose ps
-docker compose logs -f api
-docker compose logs -f web
-docker compose logs -f nginx
+curl -sS http://127.0.0.1/api/me/tenants -H "Authorization: Bearer <TOKEN>"
 ```
 
-## 端口冲突
-宿主机占用 80 时：
+3) 访问 tenant-scope API（必须带 `X-Tenant-Id`）
 ```bash
-sudo systemctl stop nginx
-# 或将 docker-compose nginx 端口改为 8080:80
+curl -sS http://127.0.0.1/api/menu \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "X-Tenant-Id: <TENANT_ID>"
 ```
+
+## 测试
+```bash
+npm -w apps/api run test:e2e:tenancy
+```
+
+该 e2e 会验证 tenant 隔离：使用错误 tenant header 访问 `/api/menu` 必须 403/400。
